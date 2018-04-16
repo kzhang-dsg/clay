@@ -1,48 +1,32 @@
 'use strict';
 
-const clay = require('clay');
+const clayCSS = require('clay-css');
 const fs = require('fs');
-const gulp = require('gulp');
+const ncp = require('ncp');
 const path = require('path');
-
-require('gulp-storage')(gulp);
-
-gulp.storage.create('claycss', 'claycss.json');
 
 const generateIconData = require('./utils/icons');
 
-let clayJSPath = path.join(clay.srcDir, 'js');
-
-const clayPath = gulp.storage.get('clayPath');
-let clayIncludePaths = clay.includePaths;
-
-if (clayPath) {
-	clayIncludePaths = path.join(
-		path.join(process.cwd(), clayPath, 'src/scss')
-	);
-
-	console.log(
-		'Warning! using ' +
-			clayIncludePaths +
-			' to compile sass.\nDelete claycss.json to reset.'
-	);
-}
+let clayJSPath = path.join(clayCSS.srcDir, 'js');
 
 const excludedComponents = /.*(pagination|isomorphic)/g;
 const metalComponents = ['electric-clay-components']
 	.concat(fs.readdirSync('../').filter(f => f.match(/^clay-.*/) && !f.match(excludedComponents)));
 const pathSrc = 'src';
-const ignoreDirs = ['components', 'layouts', 'pages', 'partials', 'styles'];
+const ignoreDirs = ['components', 'clay', 'layouts', 'pages', 'partials', 'styles'];
 const ignoreGlob = path.join(
 	'!' + pathSrc,
 	'+(' + ignoreDirs.join('|') + ')/'
 );
+
 const staticSrc = [
 	path.join(pathSrc, '**/*'),
 	path.join('!' + pathSrc, 'site.json'),
 	ignoreGlob,
 	path.join(ignoreGlob, '**/*'),
 ];
+
+ncp(clayCSS.buildDir, path.join(pathSrc, 'clay'));
 
 module.exports = {
 	frontMatterHook: function(data) {
@@ -70,7 +54,7 @@ module.exports = {
 	},
 	resolveModules: ['../../node_modules'],
 	sassOptions: {
-		includePaths: ['node_modules', clayIncludePaths],
+		includePaths: ['node_modules', clayCSS.includePaths],
 	},
 	entryPoints: {
 		electricAPI: path.join(__dirname, 'src/partials/ElectricAPIBundle.js'),
@@ -82,7 +66,7 @@ module.exports = {
 		},
 		{
 			dest: 'dist/vendor/lexicon',
-			src: path.join(clay.buildDir, 'images', 'icons', '*'),
+			src: path.join(clayCSS.buildDir, 'images', 'icons', '*'),
 		},
 		{
 			src: [
